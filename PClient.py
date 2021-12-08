@@ -1,5 +1,5 @@
 from Proxy import Proxy
-
+import hashlib
 
 class PClient:
     def __init__(self, tracker_addr: (str, int), proxy=None, port=None, upload_rate=0, download_rate=0):
@@ -43,7 +43,11 @@ class PClient:
         Start your code below!
         """
 
-        pass
+        md5 = hashlib.md5()
+        md5.update(file_path)
+        fid = md5.hexdigest()  # fid 变成hash码
+        msg = "REGISTER: " + file_path
+        self.proxy.sendto(msg, self.tracker)
 
         """
         End of your code
@@ -61,7 +65,8 @@ class PClient:
         Start your code below!
         """
 
-        pass
+        msg = "QUERY: " + fid
+        self.proxy.sendto(msg, self.tracker)
 
         """
         End of your code

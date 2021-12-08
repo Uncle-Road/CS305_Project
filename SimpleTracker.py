@@ -36,7 +36,7 @@ class SimpleTracker:
 
             if msg.startswith("REGISTER:"):
                 # Client can use this to REGISTER a file and record it on the tracker
-                fid = msg[6:]
+                fid = msg[10:]
                 if fid not in self.files:
                     self.files[fid] = []
                 self.files[fid].append(client)
@@ -44,7 +44,7 @@ class SimpleTracker:
 
             elif msg.startswith("QUERY:"):
                 # Client can use this to check who has the specific file with the given fid
-                fid = msg[6:]
+                fid = msg[7:]
                 result = []
                 for c in self.files[fid]:
                     result.append(c)

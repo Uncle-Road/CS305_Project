@@ -48,7 +48,8 @@ class PClient:
         md5.update(file_path)
         fid = md5.hexdigest()  # fid 变成hash码
         msg = "REGISTER: " + file_path
-        self.proxy.sendto(msg, self.tracker)
+        msg = msg.encode()  # string发送之前要encode
+        self.__send__(msg, self.tracker)
 
         """
         End of your code
@@ -69,7 +70,7 @@ class PClient:
         msg = "QUERY: " + fid
         self.proxy.sendto(msg, self.tracker)
 
-        response = self.proxy.recvfrom(timeout=None)
+        response = self.__recv__()
         response = response.decode()  # it is a string. eg: [("abc", 1), ("bcd", 2)]
         response = ast.literal_eval(response)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
         target_address = response[0]
@@ -90,7 +91,8 @@ class PClient:
         """
 
         msg = "CANCEL: " + fid
-        self.proxy.sendto(msg, self.tracker)
+        msg = msg.encode()
+        self.__send__(msg, self.tracker)
 
         """
         End of your code

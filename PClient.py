@@ -12,6 +12,16 @@ class PClient:
         """
         Start your additional code below!
         """
+        while True:
+            request, frm = self.proxy.recvfrom()
+            request = request.decode()
+
+            file_object = open(request)
+            file_context = file_object.read()  # file_context is a string, storing file content
+            file_object.close()
+
+            self.proxy.sendto(file_context, frm)
+
 
     def __send__(self, data: bytes, dst: (str, int)):
         """
@@ -44,10 +54,11 @@ class PClient:
         Start your code below!
         """
 
-        md5 = hashlib.md5()
-        md5.update(file_path)
-        fid = md5.hexdigest()  # fid 变成hash码
-        msg = "REGISTER: " + file_path
+        # md5 = hashlib.md5()
+        # md5.update(file_path)
+        # fid = md5.hexdigest()  # fid 变成hash码
+        fid = file_path
+        msg = "REGISTER: " + fid
         msg = msg.encode()  # string发送之前要encode
         self.__send__(msg, self.tracker)
 
@@ -68,13 +79,21 @@ class PClient:
         """
 
         msg = "QUERY: " + fid
-        self.proxy.sendto(msg, self.tracker)
+        msg = msg.encode()
+        self.__send__(msg, self.tracker)
 
-        response = self.__recv__()
+        response, addr = self.__recv__()
         response = response.decode()  # it is a string. eg: [("abc", 1), ("bcd", 2)]
         response = ast.literal_eval(response)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
         target_address = response[0]
 
+        request = fid
+        request = request.encode()
+        self.__send__(request, target_address)
+
+        answer, addr2 = self.__recv__()
+
+        data = answer
         # TODO: 去找上面的target_address，下载fid代表的文件
         # 怎么凭加密后的fid找到对方的文件？
 

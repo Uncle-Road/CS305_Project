@@ -1,5 +1,6 @@
 from Proxy import Proxy
 import hashlib
+import ast
 
 class PClient:
     def __init__(self, tracker_addr: (str, int), proxy=None, port=None, upload_rate=0, download_rate=0):
@@ -68,6 +69,14 @@ class PClient:
         msg = "QUERY: " + fid
         self.proxy.sendto(msg, self.tracker)
 
+        response = self.proxy.recvfrom(timeout=None)
+        response = response.decode()  # it is a string. eg: [("abc", 1), ("bcd", 2)]
+        response = ast.literal_eval(response)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
+        target_address = response[0]
+
+        # TODO: 去找上面的target_address，下载fid代表的文件
+        # 怎么凭加密后的fid找到对方的文件？
+
         """
         End of your code
         """
@@ -80,7 +89,8 @@ class PClient:
         :return: You can design as your need
         """
 
-        pass
+        msg = "CANCEL: " + fid
+        self.proxy.sendto(msg, self.tracker)
 
         """
         End of your code
@@ -91,7 +101,9 @@ class PClient:
         Completely stop the client, this client will be unable to share or download files any more
         :return: You can design as your need
         """
-        pass
+
+        # 这里已经有proxy.close了，似乎可以不写cancel操作？
+
         """
         End of your code
         """

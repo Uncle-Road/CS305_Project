@@ -104,7 +104,9 @@ class PClient:
         :return: You can design as your need
         """
 
-        # 这里已经有proxy.close了，似乎可以不写cancel操作？
+        msg = "CLOSE"
+        msg = msg.encode()
+        self.__send__(msg, self.tracker)
 
         """
         End of your code

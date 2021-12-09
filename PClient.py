@@ -12,15 +12,6 @@ class PClient:
         """
         Start your additional code below!
         """
-        while True:
-            request, frm = self.proxy.recvfrom()
-            request = request.decode()
-
-            file_object = open(request)
-            file_context = file_object.read()  # file_context is a string, storing file content
-            file_object.close()
-
-            self.proxy.sendto(file_context, frm)
 
 
     def __send__(self, data: bytes, dst: (str, int)):

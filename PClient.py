@@ -1,9 +1,12 @@
 from Proxy import Proxy
 import hashlib
 import ast
+from threading import Thread
+
 
 class PClient:
-    def __init__(self, tracker_addr: (str, int), proxy=None, port=None, upload_rate=0, download_rate=0):
+    def __init__(self, tracker_addr: (str, int), proxy=None, port=None, upload_rate=0, download_rate=0,
+                 packet_size=1024):
         if proxy:
             self.proxy = proxy
         else:
@@ -12,7 +15,11 @@ class PClient:
         """
         Start your additional code below!
         """
-
+        print(".")
+        self.thread = Thread(target=self.listen())
+        print("?")
+        self.packet_size = packet_size
+        self.active = True
 
     def __send__(self, data: bytes, dst: (str, int)):
         """
@@ -40,10 +47,11 @@ class PClient:
         :return: fid, which is a unique identification of the shared file and can be used by other PClients to
                  download this file, such as a hash code of it
         """
-        fid = None
+
         """
         Start your code below!
         """
+        print("register start")
 
         # md5 = hashlib.md5()
         # md5.update(file_path)
@@ -53,6 +61,7 @@ class PClient:
         msg = msg.encode()  # string发送之前要encode
         self.__send__(msg, self.tracker)
 
+        print("register finish")
         """
         End of your code
         """
@@ -68,6 +77,8 @@ class PClient:
         """
         Start your code below!
         """
+        print("download start")
+
 
         msg = "QUERY: " + fid
         msg = msg.encode()
@@ -78,16 +89,16 @@ class PClient:
         response = ast.literal_eval(response)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
         target_address = response[0]
 
-        request = fid
+        request = "GIVE: " + fid
         request = request.encode()
         self.__send__(request, target_address)
 
+        print("waiting for download")
         answer, addr2 = self.__recv__()
 
         data = answer
-        # TODO: 去找上面的target_address，下载fid代表的文件
-        # 怎么凭加密后的fid找到对方的文件？
 
+        print("download finish")
         """
         End of your code
         """
@@ -113,7 +124,7 @@ class PClient:
         Completely stop the client, this client will be unable to share or download files any more
         :return: You can design as your need
         """
-
+        self.active = False
         msg = "CLOSE"
         msg = msg.encode()
         self.__send__(msg, self.tracker)
@@ -121,7 +132,24 @@ class PClient:
         """
         End of your code
         """
+
         self.proxy.close()
+
+    def listen(self):
+
+        print("listen start")
+        while self.proxy.active:
+            try:
+                msg, frm = self.__recv__(1)
+            except Exception:
+                continue
+
+            msg = msg.decode()
+            if msg.startswith("GIVE:"):
+                fid = msg[6:]
+                file = open(fid)
+                data = file.read()
+                self.__send__(bytes(data), frm)
 
 
 if __name__ == '__main__':

@@ -32,11 +32,11 @@ class SimpleTracker:
     def start(self):
         while True:
             msg, frm = self.__recv__()
-            msg, client = msg.decode(), "(\"%s\", %d)" % frm
+            msg, client = msg.decode(), "(\"%s\", %d)" % frm  # client is a string
 
             if msg.startswith("REGISTER:"):
                 # Client can use this to REGISTER a file and record it on the tracker
-                fid = msg[6:]
+                fid = msg[10:]
                 if fid not in self.files:
                     self.files[fid] = []
                 self.files[fid].append(client)
@@ -44,7 +44,7 @@ class SimpleTracker:
 
             elif msg.startswith("QUERY:"):
                 # Client can use this to check who has the specific file with the given fid
-                fid = msg[6:]
+                fid = msg[7:]
                 result = []
                 for c in self.files[fid]:
                     result.append(c)
@@ -52,10 +52,16 @@ class SimpleTracker:
 
             elif msg.startswith("CANCEL:"):
                 # Client can use this file to cancel the share of a file
-                fid = msg[7:]
+                fid = msg[8:]
                 if client in self.files[fid]:
                     self.files[fid].remove(client)
                 self.response("Success", frm)
+
+            elif msg.startswith("CLOSE"):
+                # Client can use this to delete everything related to it
+                for i in self.files:
+                    if client in self.files[i]:
+                        self.files[i].remove(client)
 
 
 if __name__ == '__main__':

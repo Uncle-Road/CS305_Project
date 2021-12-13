@@ -1,25 +1,26 @@
 from Proxy import Proxy
 import hashlib
 import ast
-from threading import Thread
+import threading
+import multiprocessing
 
 
 class PClient:
     def __init__(self, tracker_addr: (str, int), proxy=None, port=None, upload_rate=0, download_rate=0,
-                 packet_size=1024):
+                 packet_size=1024, name=None):
         if proxy:
             self.proxy = proxy
         else:
             self.proxy = Proxy(upload_rate, download_rate, port)  # Do not modify this line!
         self.tracker = tracker_addr
+        self.name = name
         """
         Start your additional code below!
         """
-        print(".")
-        self.thread = Thread(target=self.listen())
-        print("?")
-        self.packet_size = packet_size
         self.active = True
+        self.rthread = threading.Thread(target=self.alwaysListen, args=[])
+        self.rthread.start()
+        self.packet_size = packet_size
 
     def __send__(self, data: bytes, dst: (str, int)):
         """
@@ -51,7 +52,7 @@ class PClient:
         """
         Start your code below!
         """
-        print("register start")
+        print(self.name, "register start")
 
         # md5 = hashlib.md5()
         # md5.update(file_path)
@@ -61,7 +62,7 @@ class PClient:
         msg = msg.encode()  # string发送之前要encode
         self.__send__(msg, self.tracker)
 
-        print("register finish")
+        print(self.name, "register finish")
         """
         End of your code
         """
@@ -77,8 +78,7 @@ class PClient:
         """
         Start your code below!
         """
-        print("download start")
-
+        print(self.name, "download start")
 
         msg = "QUERY: " + fid
         msg = msg.encode()
@@ -93,12 +93,13 @@ class PClient:
         request = request.encode()
         self.__send__(request, target_address)
 
-        print("waiting for download")
-        answer, addr2 = self.__recv__()
+        print(self.name, "waiting for download")
 
+        # TODO: 这里的receive应该统一用init的receive函数。要做修改
+        answer, addr2 = self.__recv__()
         data = answer
 
-        print("download finish")
+        print(self.name, "download finish")
         """
         End of your code
         """
@@ -135,21 +136,27 @@ class PClient:
 
         self.proxy.close()
 
+    # TODO: listen要适用于所有函数，还要加东西。
     def listen(self):
 
-        print("listen start")
-        while self.proxy.active:
-            try:
-                msg, frm = self.__recv__(1)
-            except Exception:
-                continue
+        print(self.name, "listen start")
 
-            msg = msg.decode()
-            if msg.startswith("GIVE:"):
-                fid = msg[6:]
-                file = open(fid)
-                data = file.read()
-                self.__send__(bytes(data), frm)
+        msg, frm = self.__recv__()
+
+        print(self.name, "listen over")
+
+        msg = msg.decode()
+        if msg.startswith("GIVE:"):
+            fid = msg[6:]
+            file = open(fid)
+            data = file.read()
+            data.encode()
+            self.__send__(bytes(data), frm)
+
+    def alwaysListen(self):
+        while True:
+            print(self.name, "invoke listen")
+            self.listen()
 
 
 if __name__ == '__main__':

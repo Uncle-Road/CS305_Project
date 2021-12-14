@@ -6,6 +6,7 @@ class SimpleTracker:
     def __init__(self, upload_rate=10000, download_rate=10000, port=None):
         self.proxy = Proxy(upload_rate, download_rate, port)
         self.files = {}
+        print("tracker start")
 
     def __send__(self, data: bytes, dst: (str, int)):
         """
@@ -32,6 +33,7 @@ class SimpleTracker:
     def start(self):
         while True:
             msg, frm = self.__recv__()
+            print("receive something!")
             msg, client = msg.decode(), "(\"%s\", %d)" % frm  # client is a string
 
             if msg.startswith("REGISTER:"):
@@ -40,6 +42,7 @@ class SimpleTracker:
                 if fid not in self.files:
                     self.files[fid] = []
                 self.files[fid].append(client)
+                print("Tracker registered: " + fid + " of " + client)
                 self.response("Success", frm)
 
             elif msg.startswith("QUERY:"):
@@ -48,7 +51,8 @@ class SimpleTracker:
                 result = []
                 for c in self.files[fid]:
                     result.append(c)
-                self.response("[%s]" % (", ".join(result)), frm)
+                print("tracker responds list: " + "[%s]" % (", ".join(result)))
+                self.response("LIST: " + "[%s]" % (", ".join(result)), frm)
 
             elif msg.startswith("CANCEL:"):
                 # Client can use this file to cancel the share of a file

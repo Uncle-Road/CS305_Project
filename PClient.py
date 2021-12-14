@@ -4,9 +4,15 @@ import ast
 import threading
 import multiprocessing
 
-Global_value = ""
+downloaded_file = "empty"
+already_download = 0
+
+target_address = ""
+target_address_get = 0
+
 
 class PClient:
+
     def __init__(self, tracker_addr: (str, int), proxy=None, port=None, upload_rate=0, download_rate=0,
                  packet_size=1024, name=None):
         if proxy:
@@ -19,8 +25,8 @@ class PClient:
         Start your additional code below!
         """
         self.active = True
-        self.rthread = threading.Thread(target=self.alwaysListen, args=[])
-        self.rthread.start()
+        self.thread = threading.Thread(target=self.alwaysListen, args=[])
+        self.thread.start()
         self.packet_size = packet_size
 
     def __send__(self, data: bytes, dst: (str, int)):
@@ -75,7 +81,7 @@ class PClient:
         :param fid: the unique identification of the expected file, should be the same type of the return value of share()
         :return: the whole received file in bytes
         """
-        data = None
+
         """
         Start your code below!
         """
@@ -85,22 +91,31 @@ class PClient:
         msg = msg.encode()
         self.__send__(msg, self.tracker)
 
-        response, addr = self.__recv__()
-        response = response.decode()  # it is a string. eg: [("abc", 1), ("bcd", 2)]
-        response = ast.literal_eval(response)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
-        target_address = response[0]
+        # response, addr = self.__recv__()
+        # response = response.decode()  # it is a string. eg: [("abc", 1), ("bcd", 2)]
+        # response = ast.literal_eval(response)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
+        # target_address = response[0]
 
-        request = "REQUEST: " + fid
-        request = request.encode()
-        self.__send__(request, target_address)
+        global target_address_get
+        print("target_address_get =", target_address_get)
+        if target_address_get != 0:
+            request = "REQUEST: " + fid
+            request = request.encode()
+            self.__send__(request, target_address)
+            print(self.name, "send request")
+            target_address_get = 0
 
         print(self.name, "waiting for download")
 
-        # TODO: 这里的receive应该统一用init的receive函数。要做修改
+        data = "empty"
 
-        data = Global_value
+        global already_download
+        if already_download != 0:
+            data = downloaded_file
+            already_download = 0
+
+        print("already_download =", already_download)
         data = data.encode()
-        data = bytes(data)
         print(self.name, "download finish")
         """
         End of your code
@@ -149,17 +164,28 @@ class PClient:
 
         msg = msg.decode()
 
-        if msg.startswith("REQUEST:"):
+        if msg.startswith("REQUEST:"):  # PClient收到请求文件的fid
             fid = msg[9:]
             file = open(fid)
             data = file.read()
             data = "GIVE: " + data
-            data.encode()
-            self.__send__(bytes(data), frm)
-        if msg.startswith("GIVE:"):
+            data = data.encode()
+            self.__send__(data, frm)
+            print(self.name, "send file")
+        elif msg.startswith("GIVE:"):
             file = msg[6:]
-            Global_value = file
-
+            global downloaded_file  # 改全局变量一定要加global关键字
+            downloaded_file = file
+            global already_download
+            already_download = 1
+        elif msg.startswith("LIST:"):
+            lst = msg[6:]
+            who_have = ast.literal_eval(lst)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
+            print(self.name, "knows who have it:", who_have)
+            global target_address
+            target_address = who_have[0]
+            global target_address_get
+            target_address_get = 1
 
     def alwaysListen(self):
         while True:

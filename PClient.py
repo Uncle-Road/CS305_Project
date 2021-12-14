@@ -4,6 +4,7 @@ import ast
 import threading
 import multiprocessing
 
+Global_value = ""
 
 class PClient:
     def __init__(self, tracker_addr: (str, int), proxy=None, port=None, upload_rate=0, download_rate=0,
@@ -89,16 +90,17 @@ class PClient:
         response = ast.literal_eval(response)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
         target_address = response[0]
 
-        request = "GIVE: " + fid
+        request = "REQUEST: " + fid
         request = request.encode()
         self.__send__(request, target_address)
 
         print(self.name, "waiting for download")
 
         # TODO: 这里的receive应该统一用init的receive函数。要做修改
-        answer, addr2 = self.__recv__()
-        data = answer
 
+        data = Global_value
+        data = data.encode()
+        data = bytes(data)
         print(self.name, "download finish")
         """
         End of your code
@@ -146,12 +148,18 @@ class PClient:
         print(self.name, "listen over")
 
         msg = msg.decode()
-        if msg.startswith("GIVE:"):
-            fid = msg[6:]
+
+        if msg.startswith("REQUEST:"):
+            fid = msg[9:]
             file = open(fid)
             data = file.read()
+            data = "GIVE: " + data
             data.encode()
             self.__send__(bytes(data), frm)
+        if msg.startswith("GIVE:"):
+            file = msg[6:]
+            Global_value = file
+
 
     def alwaysListen(self):
         while True:

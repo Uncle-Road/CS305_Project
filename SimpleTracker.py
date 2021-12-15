@@ -68,8 +68,9 @@ class SimpleTracker:
                     self.files[fid].remove(client)
                 self.response("Success", frm)
 
-            elif msg.startswith("CLOSE"):
+            elif msg == "CLOSE":
                 # Client can use this to delete everything related to it
+                print("Close", client)
                 for i in self.files:
                     if client in self.files[i]:
                         self.files[i].remove(client)

@@ -116,9 +116,10 @@ class PClient:
             data = downloaded_file
             already_download = 0
 
-        print("already_download =", already_download)
         data = data.encode()
         print(self.name, "download finish")
+
+        self.register(fid)
         """
         End of your code
         """
@@ -144,11 +145,10 @@ class PClient:
         Completely stop the client, this client will be unable to share or download files any more
         :return: You can design as your need
         """
-        self.active = False
         msg = "CLOSE"
         msg = msg.encode()
         self.__send__(msg, self.tracker)
-
+        time.sleep(1)
         """
         End of your code
         """
@@ -186,7 +186,6 @@ class PClient:
             print(self.name, "knows who have it:", who_have)
             global target_address
             target_address = who_have[0]
-            print(target_address)
             global target_address_get
             target_address_get = 1
 

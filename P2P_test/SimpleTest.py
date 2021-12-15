@@ -4,26 +4,21 @@ tracker_address = ("127.0.0.1", 10086)
 
 if __name__ == '__main__':
     # A,B join the network
-    print("0")
     A = PClient(tracker_address, upload_rate=100000, download_rate=100000, name="A")
-    print("1")
     B = PClient(tracker_address, upload_rate=100000, download_rate=100000, name="B")
-    print("2")
     # A register a file and B download it
-    fid = A.register("../test_files/alice.txt")
-    print("3")
+    fid = A.register("../test_files/test.txt")
     data1 = B.download(fid)
-    print("4")
+    print("data1 =", data1)
     # A cancel the register of the file
     A.close()
-    print("5")
     # C join the network and download the file from B
     C = PClient(tracker_address, upload_rate=100000, download_rate=100000, name="C")
-    print("6")
     data2 = C.download(fid)
-    print("7")
+    print("data2 =", data2)
     if data1 == data2:
         print("Success!")
+        print(data1)
     else:
         raise RuntimeError
 

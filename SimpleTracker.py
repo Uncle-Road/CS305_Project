@@ -1,11 +1,15 @@
 from socketserver import BaseRequestHandler, ThreadingUDPServer
 from Proxy import Proxy
+from threading import Thread
 
 
 class SimpleTracker:
-    def __init__(self, upload_rate=10000, download_rate=10000, port=None):
+    def __init__(self, upload_rate=10000, download_rate=10000, port=10086):
         self.proxy = Proxy(upload_rate, download_rate, port)
+        print("Tracker bind to", self.proxy.port)
         self.files = {}
+        self.tthread = Thread(target=self.listen)
+        self.active = True
 
     def __send__(self, data: bytes, dst: (str, int)):
         """
@@ -30,8 +34,13 @@ class SimpleTracker:
         self.__send__(data.encode(), address)
 
     def start(self):
-        while True:
+        self.tthread.start()
+
+    def listen(self):
+        while self.active:
+            print("start receiving")
             msg, frm = self.__recv__()
+            print("receive something!")
             msg, client = msg.decode(), "(\"%s\", %d)" % frm  # client is a string
 
             if msg.startswith("REGISTER:"):
@@ -40,6 +49,7 @@ class SimpleTracker:
                 if fid not in self.files:
                     self.files[fid] = []
                 self.files[fid].append(client)
+                print("Tracker registered: " + fid + " of " + client)
                 self.response("Success", frm)
 
             elif msg.startswith("QUERY:"):
@@ -48,7 +58,8 @@ class SimpleTracker:
                 result = []
                 for c in self.files[fid]:
                     result.append(c)
-                self.response("[%s]" % (", ".join(result)), frm)
+                print("tracker responds list: " + "[%s]" % (", ".join(result)))
+                self.response("LIST: " + "[%s]" % (", ".join(result)), frm)
 
             elif msg.startswith("CANCEL:"):
                 # Client can use this file to cancel the share of a file
@@ -57,8 +68,9 @@ class SimpleTracker:
                     self.files[fid].remove(client)
                 self.response("Success", frm)
 
-            elif msg.startswith("CLOSE"):
+            elif msg == "CLOSE":
                 # Client can use this to delete everything related to it
+                print("Close", client)
                 for i in self.files:
                     if client in self.files[i]:
                         self.files[i].remove(client)

@@ -7,18 +7,20 @@ if __name__ == '__main__':
     A = PClient(tracker_address, upload_rate=100000, download_rate=100000, name="A")
     B = PClient(tracker_address, upload_rate=100000, download_rate=100000, name="B")
     # A register a file and B download it
-    fid = A.register("../test_files/alice.txt")
+    fid = A.register("../test_files/test.txt")
     data1 = B.download(fid)
-    # # A cancel the register of the file
-    # A.close()
-    # # C join the network and download the file from B
-    # C = PClient(tracker_address, upload_rate=100000, download_rate=100000, name="C")
-    # data2 = C.download(fid)
-    # if data1 == data2:
-    #     print("Success!")
-    #     print(data1)
-    # else:
-    #     raise RuntimeError
-    #
-    # B.close()
-    # C.close()
+    print("data1 =", data1)
+    # A cancel the register of the file
+    A.close()
+    # C join the network and download the file from B
+    C = PClient(tracker_address, upload_rate=100000, download_rate=100000, name="C")
+    data2 = C.download(fid)
+    print("data2 =", data2)
+    if data1 == data2:
+        print("Success!")
+        print(data1)
+    else:
+        raise RuntimeError
+
+    B.close()
+    C.close()

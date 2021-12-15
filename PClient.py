@@ -2,7 +2,7 @@ from Proxy import Proxy
 import hashlib
 import ast
 import threading
-import multiprocessing
+import time
 
 downloaded_file = "empty"
 already_download = 0
@@ -68,6 +68,7 @@ class PClient:
         msg = "REGISTER: " + fid
         msg = msg.encode()  # string发送之前要encode
         self.__send__(msg, ("127.0.0.1", 10086))
+        time.sleep(2)
 
         print(self.name, "register finish")
         """
@@ -90,7 +91,7 @@ class PClient:
         msg = "QUERY: " + fid
         msg = msg.encode()
         self.__send__(msg, self.tracker)
-
+        time.sleep(2)
         # response, addr = self.__recv__()
         # response = response.decode()  # it is a string. eg: [("abc", 1), ("bcd", 2)]
         # response = ast.literal_eval(response)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
@@ -103,6 +104,7 @@ class PClient:
             request = request.encode()
             self.__send__(request, target_address)
             print(self.name, "send request")
+            time.sleep(2)
             target_address_get = 0
 
         print(self.name, "waiting for download")

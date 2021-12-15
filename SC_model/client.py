@@ -40,7 +40,8 @@ class Client:
         for idx in range(int(msg.decode())):
             msg, frm = self.__recv__()
             data += msg
-            print("%s receive %d" % (self.name, idx))
+            if (idx % 100 == 0):
+                print("%s receive %d" % (self.name, idx))
 
         with open("../test_files/%s" % file, "rb") as f:
             if f.read() == data:
@@ -48,9 +49,6 @@ class Client:
             else:
                 print("Something wrong!")
 
-    def shout(self):
-        msg = "fuck"
-        self.__send__(msg.encode(), server_address)
 
 def client_download(client):
     client.download("../test_files/bg.png")

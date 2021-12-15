@@ -104,12 +104,8 @@ class PClient:
             request = request.encode()
             self.__send__(request, target_address)
             print(self.name, "send request")
-            time.sleep(2)
+            time.sleep(10)
             target_address_get = 0
-
-        print(self.name, "waiting for download")
-
-        data = "empty"
 
         global already_download
         print("already_download =", str(already_download))

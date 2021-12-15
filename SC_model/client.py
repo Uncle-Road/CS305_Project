@@ -53,15 +53,15 @@ class Client:
         self.__send__(msg.encode(), server_address)
 
 def client_download(client):
-    client.download("../test_files/bg.png")
+    client.download("../test_files/alice.txt")
 
 
 if __name__ == '__main__':
     # cc = Client("1", download_rate=1000)
     # cc.shout()
     # the download rate of different clients
-    rates = [50000, 30000, 10000]
-    # rates = [3000]
+    # rates = [50000, 30000, 10000]
+    rates = [50000]
     threads = []
 
     for i, rate in enumerate(rates):

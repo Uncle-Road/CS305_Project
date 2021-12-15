@@ -4,8 +4,8 @@ import ast
 import threading
 import time
 
-downloaded_file = "empty"
-already_download = 0
+# downloaded_file = "empty"
+# already_download = 0
 
 target_address = ()
 target_address_get = 0
@@ -28,6 +28,8 @@ class PClient:
         self.thread = threading.Thread(target=self.alwaysListen, args=[])
         self.thread.start()
         self.packet_size = packet_size
+        self. downloaded_file = "empty"
+        self.already_download = 0
 
     def __send__(self, data: bytes, dst: (str, int)):
         """
@@ -111,10 +113,10 @@ class PClient:
 
         data = "empty"
 
-        global already_download
-        if already_download != 0:
-            data = downloaded_file
-            already_download = 0
+        # global already_download
+        if self.already_download != 0:
+            data = self.downloaded_file
+            self.already_download = 0
 
         data = data.encode()
         print(self.name, "download finish")
@@ -177,6 +179,7 @@ class PClient:
             time.sleep(1)
             for packet in packets:
                 self.__send__(packet, frm)
+                # print(packet)
 
             # file = open(fid)
             # data = file.read()
@@ -191,14 +194,17 @@ class PClient:
             # global already_download
             # already_download = 1
             msg = msg[6:]
-            global downloaded_file  # 改全局变量一定要加global关键字
-            downloaded_file = ""
+            # global downloaded_file  # 改全局变量一定要加global关键字
+            # downloaded_file = ""
             for idx in range(int(msg)):
                 msg, frm = self.__recv__()
-                downloaded_file += msg.decode()
+                # print("sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss")
+                # print(msg.decode())
+                self.downloaded_file += msg.decode()
                 print("%s receive %d" % (self.name, idx))
-            global already_download
-            already_download = 1
+                # print(self.downloaded_file)
+            # global already_download
+            self.already_download = 1
         elif msg.startswith("LIST:"):
             lst = msg[6:]
             who_have = ast.literal_eval(lst)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]

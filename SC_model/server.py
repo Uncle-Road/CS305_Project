@@ -3,7 +3,7 @@ from threading import Thread
 
 
 class Server:
-    def __init__(self, upload_rate, download_rate, packet_size=1024, port=10087):
+    def __init__(self, upload_rate, download_rate, packet_size=10240, port=10087):
         self.proxy = Proxy(upload_rate, download_rate, port)
         print("Server bind to", self.proxy.port)
         self.packet_size = packet_size
@@ -46,14 +46,16 @@ class Server:
             print("%s:%d ask for %s" % (frm[0], frm[1], msg))
             with open("../test_files/%s" % msg, 'rb') as f:#f = open(../tes,'rb')
                 data = f.read()
-
+            # print(data) 1
             packets = [data[i * self.packet_size: (i + 1) * self.packet_size]
                        for i in range(len(data) // self.packet_size + 1)]
-
+            # print(len(packets)) 2
             self.__send__(str(len(packets)).encode(), frm)
             print("Total length of %s is %d bytes, %d packets" % (msg, len(data), len(packets)))
+            # print("dsssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss")
             for packet in packets:
                 self.__send__(packet, frm)
+                # print(packet) 3
 
     def close(self):
         self.active = False

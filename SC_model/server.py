@@ -44,7 +44,7 @@ class Server:
             msg = msg.decode()
 
             print("%s:%d ask for %s" % (frm[0], frm[1], msg))
-            with open("../test_files/%s" % msg, 'rb') as f:
+            with open("../test_files/%s" % msg, 'rb') as f:#f = open(../tes,'rb')
                 data = f.read()
 
             packets = [data[i * self.packet_size: (i + 1) * self.packet_size]

@@ -12,7 +12,7 @@ if __name__ == '__main__':
     print("data1 =", data1)
     # A cancel the register of the file
     A.close()
-    # C join the network and download the file from B
+    # # C join the network and download the file from B
     C = PClient(tracker_address, upload_rate=100000, download_rate=100000, name="C")
     data2 = C.download(fid)
     print("data1 =", data1)
@@ -22,6 +22,7 @@ if __name__ == '__main__':
         print(data1)
     else:
         raise RuntimeError
+    # print(data1)
 
     B.close()
-    C.close()
+    # C.close()

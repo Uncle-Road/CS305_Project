@@ -112,9 +112,13 @@ class PClient:
         data = "empty"
 
         global already_download
-        if already_download != 0:
-            data = downloaded_file
-            already_download = 0
+        print("already_download =", str(already_download))
+        # # print("downloaded_file = " + downloaded_file)
+        # if already_download != 0:
+        #     data = downloaded_file
+        #     print("had value")
+        #     already_download = 0
+        data = downloaded_file
 
         data = data.encode()
         print(self.name, "download finish")
@@ -174,6 +178,7 @@ class PClient:
             packets = [data[i * self.packet_size: (i + 1) * self.packet_size]
                        for i in range(len(data) // self.packet_size + 1)]
             self.__send__(("GIVE: " + str(len(packets))).encode(), frm)
+            print(self.name, "send packet length is:", len(packets))
             time.sleep(1)
             for packet in packets:
                 self.__send__(packet, frm)

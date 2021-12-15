@@ -48,12 +48,17 @@ class Client:
             else:
                 print("Something wrong!")
 
+    def shout(self):
+        msg = "fuck"
+        self.__send__(msg.encode(), server_address)
 
 def client_download(client):
     client.download("../test_files/bg.png")
 
 
 if __name__ == '__main__':
+    # cc = Client("1", download_rate=1000)
+    # cc.shout()
     # the download rate of different clients
     rates = [50000, 30000, 10000]
     # rates = [3000]

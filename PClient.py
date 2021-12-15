@@ -7,13 +7,13 @@ import multiprocessing
 downloaded_file = "empty"
 already_download = 0
 
-target_address = ""
+target_address = ()
 target_address_get = 0
 
 
 class PClient:
 
-    def __init__(self, tracker_addr: (str, int), proxy=None, port=None, upload_rate=0, download_rate=0,
+    def __init__(self, tracker_addr=(str, int), proxy=None, port=None, upload_rate=0, download_rate=0,
                  packet_size=1024, name=None):
         if proxy:
             self.proxy = proxy
@@ -67,7 +67,7 @@ class PClient:
         fid = file_path
         msg = "REGISTER: " + fid
         msg = msg.encode()  # string发送之前要encode
-        self.__send__(msg, self.tracker)
+        self.__send__(msg, ("127.0.0.1", 10086))
 
         print(self.name, "register finish")
         """
@@ -184,6 +184,7 @@ class PClient:
             print(self.name, "knows who have it:", who_have)
             global target_address
             target_address = who_have[0]
+            print(target_address)
             global target_address_get
             target_address_get = 1
 

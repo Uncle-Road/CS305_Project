@@ -39,8 +39,10 @@ class Server:
                 msg, frm = self.__recv__(1)
             except Exception:
                 continue
+            # msg, frm = self.__recv__()
 
             msg = msg.decode()
+
             print("%s:%d ask for %s" % (frm[0], frm[1], msg))
             with open("../test_files/%s" % msg, 'rb') as f:
                 data = f.read()

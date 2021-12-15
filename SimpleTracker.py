@@ -1,12 +1,15 @@
 from socketserver import BaseRequestHandler, ThreadingUDPServer
 from Proxy import Proxy
+from threading import Thread
 
 
 class SimpleTracker:
-    def __init__(self, upload_rate=10000, download_rate=10000, port=None):
+    def __init__(self, upload_rate=10000, download_rate=10000, port=10086):
         self.proxy = Proxy(upload_rate, download_rate, port)
+        print("Tracker bind to", self.proxy.port)
         self.files = {}
-        print("tracker start")
+        self.tthread = Thread(target=self.listen)
+        self.active = True
 
     def __send__(self, data: bytes, dst: (str, int)):
         """
@@ -31,7 +34,11 @@ class SimpleTracker:
         self.__send__(data.encode(), address)
 
     def start(self):
-        while True:
+        self.tthread.start()
+
+    def listen(self):
+        while self.active:
+            print("start receiving")
             msg, frm = self.__recv__()
             print("receive something!")
             msg, client = msg.decode(), "(\"%s\", %d)" % frm  # client is a string

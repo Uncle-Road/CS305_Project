@@ -14,7 +14,7 @@ target_address_get = 0
 class PClient:
 
     def __init__(self, tracker_addr=(str, int), proxy=None, port=None, upload_rate=0, download_rate=0,
-                 packet_size=1024, name=None):
+                 packet_size=10240, name=None):
         if proxy:
             self.proxy = proxy
         else:
@@ -168,16 +168,35 @@ class PClient:
 
         if msg.startswith("REQUEST:"):  # PClient收到请求文件的fid
             fid = msg[9:]
-            file = open(fid)
-            data = file.read()
-            data = "GIVE: " + data
-            data = data.encode()
-            self.__send__(data, frm)
+
+            with open(fid, 'rb') as f:  # f = open(../tes,'rb')
+                data = f.read()
+            packets = [data[i * self.packet_size: (i + 1) * self.packet_size]
+                       for i in range(len(data) // self.packet_size + 1)]
+            self.__send__(("GIVE: " + str(len(packets))).encode(), frm)
+            time.sleep(1)
+            for packet in packets:
+                self.__send__(packet, frm)
+
+            # file = open(fid)
+            # data = file.read()
+            # data = "GIVE: " + data
+            # data = data.encode()
+            # self.__send__(data, frm)
             print(self.name, "send file")
         elif msg.startswith("GIVE:"):
-            file = msg[6:]
+            # file = msg[6:]
+            # global downloaded_file  # 改全局变量一定要加global关键字
+            # downloaded_file = file
+            # global already_download
+            # already_download = 1
+            msg = msg[6:]
             global downloaded_file  # 改全局变量一定要加global关键字
-            downloaded_file = file
+            downloaded_file = ""
+            for idx in range(int(msg)):
+                msg, frm = self.__recv__()
+                downloaded_file += msg.decode()
+                print("%s receive %d" % (self.name, idx))
             global already_download
             already_download = 1
         elif msg.startswith("LIST:"):

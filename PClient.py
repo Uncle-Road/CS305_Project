@@ -70,7 +70,7 @@ class PClient:
         self.__send__(msg, ("127.0.0.1", 10086))
         time.sleep(2)
 
-        print(self.name, "register finish")
+        # print(self.name, "register finish")
         """
         End of your code
         """
@@ -86,7 +86,7 @@ class PClient:
         """
         Start your code below!
         """
-        print(self.name, "download start")
+        # print(self.name, "download start")
 
         msg = "QUERY: " + fid
         msg = msg.encode()
@@ -98,18 +98,14 @@ class PClient:
         # target_address = response[0]
 
         global target_address_get
-        print("target_address_get =", target_address_get)
+        # print("target_address_get =", target_address_get)
         if target_address_get != 0:
             request = "REQUEST: " + fid
             request = request.encode()
             self.__send__(request, target_address)
-            print(self.name, "send request")
-            time.sleep(2)
+            # print(self.name, "send request")
+            time.sleep(10)
             target_address_get = 0
-
-        print(self.name, "waiting for download")
-
-        data = "empty"
 
         global already_download
         print("already_download =", str(already_download))
@@ -162,11 +158,11 @@ class PClient:
     # TODO: listen要适用于所有函数，还要加东西。
     def listen(self):
 
-        print(self.name, "listen start")
+        # print(self.name, "listen start")
 
         msg, frm = self.__recv__()
 
-        print(self.name, "listen over")
+        # print(self.name, "listen over")
 
         msg = msg.decode()
 
@@ -178,7 +174,7 @@ class PClient:
             packets = [data[i * self.packet_size: (i + 1) * self.packet_size]
                        for i in range(len(data) // self.packet_size + 1)]
             self.__send__(("GIVE: " + str(len(packets))).encode(), frm)
-            print(self.name, "send packet length is:", len(packets))
+            # print(self.name, "send packet length is:", len(packets))
             time.sleep(1)
             for packet in packets:
                 self.__send__(packet, frm)
@@ -188,7 +184,7 @@ class PClient:
             # data = "GIVE: " + data
             # data = data.encode()
             # self.__send__(data, frm)
-            print(self.name, "send file")
+            # print(self.name, "send file")
         elif msg.startswith("GIVE:"):
             # file = msg[6:]
             # global downloaded_file  # 改全局变量一定要加global关键字
@@ -201,7 +197,7 @@ class PClient:
             for idx in range(int(msg)):
                 msg, frm = self.__recv__()
                 downloaded_file += msg.decode()
-                print("%s receive %d" % (self.name, idx))
+                # print("%s receive %d" % (self.name, idx))
             global already_download
             already_download = 1
         elif msg.startswith("LIST:"):
@@ -215,7 +211,7 @@ class PClient:
 
     def alwaysListen(self):
         while True:
-            print(self.name, "invoke listen")
+            # print(self.name, "invoke listen")
             self.listen()
 
 

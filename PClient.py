@@ -1,10 +1,12 @@
+#-*- coding : utf-8-*-
+# coding:unicode_escape
 from Proxy import Proxy
 import hashlib
 import ast
 import threading
 import time
 
-downloaded_file = "empty"
+# downloaded_file = "empty"
 already_download = 0
 
 target_address = ()
@@ -24,16 +26,18 @@ class PClient:
         """
         Start your additional code below!
         """
-        self.active = True
+        self.downloaded_file = "empty"
+        self.active = False
         self.thread = threading.Thread(target=self.alwaysListen, args=[])
         self.thread.start()
         self.packet_size = packet_size
+
 
     def __send__(self, data: bytes, dst: (str, int)):
         """
         Do not modify this function!!!
         You must send all your packet by this function!!!
-        :param data: The data to be send
+        :param data: The data to be sent
         :param dst: The address of the destination
         """
         self.proxy.sendto(data, dst)
@@ -92,10 +96,6 @@ class PClient:
         msg = msg.encode()
         self.__send__(msg, self.tracker)
         time.sleep(2)
-        # response, addr = self.__recv__()
-        # response = response.decode()  # it is a string. eg: [("abc", 1), ("bcd", 2)]
-        # response = ast.literal_eval(response)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
-        # target_address = response[0]
 
         global target_address_get
         # print("target_address_get =", target_address_get)
@@ -103,22 +103,25 @@ class PClient:
             request = "REQUEST: " + fid
             request = request.encode()
             self.__send__(request, target_address)
+            self.active = True
             # print(self.name, "send request")
-            time.sleep(10)
+            # time.sleep(20)
+            while self.active:
+                time.sleep(0.1)
             target_address_get = 0
 
-        global already_download
-        print("already_download =", str(already_download))
+        # global already_download
+        # print("already_download =", str(already_download))
         # # print("downloaded_file = " + downloaded_file)
         # if already_download != 0:
         #     data = downloaded_file
         #     print("had value")
         #     already_download = 0
-        data = downloaded_file
+        data = self.downloaded_file
 
         data = data.encode()
         print(self.name, "download finish")
-
+        print()
         self.register(fid)
         """
         End of your code
@@ -127,7 +130,7 @@ class PClient:
 
     def cancel(self, fid):
         """
-        Stop sharing a specific file, others should be unable to get this file from this client any more
+        Stop sharing a specific file, others should be unable to get this file from this client anymore
         :param fid: the unique identification of the file to be canceled register on the Tracker
         :return: You can design as your need
         """
@@ -142,7 +145,7 @@ class PClient:
 
     def close(self):
         """
-        Completely stop the client, this client will be unable to share or download files any more
+        Completely stop the client, this client will be unable to share or download files anymore
         :return: You can design as your need
         """
         msg = "CLOSE"
@@ -164,7 +167,7 @@ class PClient:
 
         # print(self.name, "listen over")
 
-        msg = msg.decode()
+        msg = msg.decode('utf-8')
 
         if msg.startswith("REQUEST:"):  # PClient收到请求文件的fid
             fid = msg[9:]
@@ -175,7 +178,7 @@ class PClient:
                        for i in range(len(data) // self.packet_size + 1)]
             self.__send__(("GIVE: " + str(len(packets))).encode(), frm)
             # print(self.name, "send packet length is:", len(packets))
-            time.sleep(1)
+            time.sleep(10)
             for packet in packets:
                 self.__send__(packet, frm)
 
@@ -192,18 +195,20 @@ class PClient:
             # global already_download
             # already_download = 1
             msg = msg[6:]
-            global downloaded_file  # 改全局变量一定要加global关键字
-            downloaded_file = ""
+            # global downloaded_file  # 改全局变量一定要加global关键字
+            self.downloaded_file = ""
             for idx in range(int(msg)):
                 msg, frm = self.__recv__()
-                downloaded_file += msg.decode()
-                # print("%s receive %d" % (self.name, idx))
+                self.downloaded_file += msg.decode('utf-8')
+                print("%s receive %d" % (self.name, idx))
             global already_download
             already_download = 1
+            self.active = False
         elif msg.startswith("LIST:"):
             lst = msg[6:]
             who_have = ast.literal_eval(lst)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
             print(self.name, "knows who have it:", who_have)
+            print()
             global target_address
             target_address = who_have[0]
             global target_address_get

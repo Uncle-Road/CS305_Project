@@ -162,7 +162,7 @@ class PClient:
 
         msg, frm = self.__recv__()
 
-        print(self.name, "listen over")
+        print(self.name, "listen over and the message is",msg.decode())
 
         msg = msg.decode()
 

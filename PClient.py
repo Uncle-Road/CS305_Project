@@ -26,7 +26,7 @@ class PClient:
         """
         Start your additional code below!
         """
-        self.downloaded_file = "empty"
+        self.downloaded_file = b"empty"
         self.active = False
         self.thread = threading.Thread(target=self.alwaysListen, args=[])
         self.thread.start()
@@ -119,7 +119,7 @@ class PClient:
         #     already_download = 0
         data = self.downloaded_file
 
-        data = data.encode()
+        # data = data.encode()
         print(self.name, "download finish")
         print()
         self.register(fid)
@@ -138,7 +138,7 @@ class PClient:
         msg = "CANCEL: " + fid
         msg = msg.encode()
         self.__send__(msg, self.tracker)
-
+        print(self.name, "cancel")
         """
         End of your code
         """
@@ -152,6 +152,7 @@ class PClient:
         msg = msg.encode()
         self.__send__(msg, self.tracker)
         time.sleep(1)
+        print(self.name, "close")
         """
         End of your code
         """
@@ -167,7 +168,7 @@ class PClient:
 
         # print(self.name, "listen over")
 
-        msg = msg.decode('utf-8')
+        msg = msg.decode()
 
         if msg.startswith("REQUEST:"):  # PClient收到请求文件的fid
             fid = msg[9:]
@@ -177,7 +178,7 @@ class PClient:
             packets = [data[i * self.packet_size: (i + 1) * self.packet_size]
                        for i in range(len(data) // self.packet_size + 1)]
             self.__send__(("GIVE: " + str(len(packets))).encode(), frm)
-            # print(self.name, "send packet length is:", len(packets))
+            print(self.name, "send packet length is:", len(packets))
             time.sleep(10)
             for packet in packets:
                 self.__send__(packet, frm)
@@ -196,10 +197,10 @@ class PClient:
             # already_download = 1
             msg = msg[6:]
             # global downloaded_file  # 改全局变量一定要加global关键字
-            self.downloaded_file = ""
+            self.downloaded_file = b""
             for idx in range(int(msg)):
-                msg, frm = self.__recv__()
-                self.downloaded_file += msg.decode('utf-8')
+                data_fragment, frm = self.__recv__()
+                self.downloaded_file += data_fragment
                 print("%s receive %d" % (self.name, idx))
             global already_download
             already_download = 1

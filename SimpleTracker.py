@@ -8,6 +8,7 @@ class SimpleTracker:
         self.proxy = Proxy(upload_rate, download_rate, port)
         print("Tracker bind to", self.proxy.port)
         self.files = {}
+        self.file_length = {}
         self.tthread = Thread(target=self.listen)
         self.active = True
 
@@ -43,9 +44,10 @@ class SimpleTracker:
             print("receive something!")
             msg, client = msg.decode(), "(\"%s\", %d)" % frm  # client is a string
 
-            if msg.startswith("REGISTER:"):
+            if msg.split()[0] == "REGISTER":
                 # Client can use this to REGISTER a file and record it on the tracker
-                fid = msg[10:]
+                fid = msg.split()[1]
+                length = msg.split()[2]
                 if fid not in self.files:
                     self.files[fid] = []
                 self.files[fid].append(client)

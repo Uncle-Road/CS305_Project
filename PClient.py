@@ -9,7 +9,7 @@ import time
 # downloaded_file = "empty"
 already_download = 0
 
-target_address = ()
+target_address = []
 target_address_get = 0
 
 
@@ -26,7 +26,7 @@ class PClient:
         """
         Start your additional code below!
         """
-        self.downloaded_file = b"empty"
+        self.downloaded_file = [b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'']
         self.active = False
         self.thread = threading.Thread(target=self.alwaysListen, args=[])
         self.thread.start()
@@ -69,7 +69,12 @@ class PClient:
         # md5.update(file_path)
         # fid = md5.hexdigest()  # fid 变成hash码
         fid = file_path
-        msg = "REGISTER: " + fid
+        with open(fid, 'rb') as f:  # f = open(../tes,'rb')
+            data = f.read()
+        packets = [data[i * self.packet_size: (i + 1) * self.packet_size]
+                   for i in range(len(data) // self.packet_size + 1)]
+
+        msg = "REGISTER" + " " + fid + " " + str(len(packets))
         msg = msg.encode()  # string发送之前要encode
         self.__send__(msg, ("127.0.0.1", 10086))
         time.sleep(2)
@@ -95,29 +100,24 @@ class PClient:
         msg = "QUERY: " + fid
         msg = msg.encode()
         self.__send__(msg, self.tracker)
-        time.sleep(2)
+        time.sleep(1)
 
         global target_address_get
         # print("target_address_get =", target_address_get)
         if target_address_get != 0:
-            request = "REQUEST: " + fid
-            request = request.encode()
-            self.__send__(request, target_address)
-            self.active = True
-            # print(self.name, "send request")
-            # time.sleep(20)
-            while self.active:
-                time.sleep(0.1)
+            address_num = len(target_address)
+            for i in range(0, address_num):
+                request = "REQUEST" + " " + str(address_num) + " " + str(i) + " " + fid
+                request = request.encode()
+                self.__send__(request, target_address[i])
+                self.active = True
+                while self.active:
+                    time.sleep(0.1)
             target_address_get = 0
 
-        # global already_download
-        # print("already_download =", str(already_download))
-        # # print("downloaded_file = " + downloaded_file)
-        # if already_download != 0:
-        #     data = downloaded_file
-        #     print("had value")
-        #     already_download = 0
-        data = self.downloaded_file
+        data = b''
+        for part in self.downloaded_file:
+            data += part
 
         # data = data.encode()
         print(self.name, "download finish")
@@ -170,40 +170,44 @@ class PClient:
 
         msg = msg.decode()
 
-        if msg.startswith("REQUEST:"):  # PClient收到请求文件的fid
-            fid = msg[9:]
+        if msg.split()[0] == "REQUEST":  # PClient收到请求文件的报文 REQUEST address_num my_num fid
+            address_num = int(msg.split()[1])
+            my_num = int(msg.split()[2])
+            fid = msg.split()[3]
 
             with open(fid, 'rb') as f:  # f = open(../tes,'rb')
                 data = f.read()
             packets = [data[i * self.packet_size: (i + 1) * self.packet_size]
                        for i in range(len(data) // self.packet_size + 1)]
-            self.__send__(("GIVE: " + str(len(packets))).encode(), frm)
-            print(self.name, "send packet length is:", len(packets))
-            time.sleep(10)
-            for packet in packets:
-                self.__send__(packet, frm)
 
-            # file = open(fid)
-            # data = file.read()
-            # data = "GIVE: " + data
-            # data = data.encode()
-            # self.__send__(data, frm)
+            l = int(len(packets) / address_num)
+            my_length = int(len(packets) / address_num)
+            print("aaaaa: ", my_length)
+            if my_num + 1 == address_num:
+                my_length = int(len(packets) / address_num) + len(packets) - int(len(packets) / address_num) * address_num
+
+            msg = "GIVE" + " " + str(my_length) + " " + str(my_num)
+            msg = msg.encode()
+
+            self.__send__(msg, frm)
+            print(self.name, "send packet length is:", str(my_length))
+            time.sleep(1)
+
+            start = my_num * l
+
+            for i in range(int(start), int(start) + int(my_length)):
+                self.__send__(packets[i], frm)
+
             # print(self.name, "send file")
-        elif msg.startswith("GIVE:"):
-            # file = msg[6:]
+        elif msg.split()[0] == "GIVE":
+            length = round(float(msg.split()[1]))
+            pos = int(msg.split()[2])
             # global downloaded_file  # 改全局变量一定要加global关键字
-            # downloaded_file = file
-            # global already_download
-            # already_download = 1
-            msg = msg[6:]
-            # global downloaded_file  # 改全局变量一定要加global关键字
-            self.downloaded_file = b""
-            for idx in range(int(msg)):
+
+            for idx in range(length):
                 data_fragment, frm = self.__recv__()
-                self.downloaded_file += data_fragment
+                self.downloaded_file[pos] += data_fragment
                 print("%s receive %d" % (self.name, idx))
-            global already_download
-            already_download = 1
             self.active = False
         elif msg.startswith("LIST:"):
             lst = msg[6:]
@@ -211,7 +215,7 @@ class PClient:
             print(self.name, "knows who have it:", who_have)
             print()
             global target_address
-            target_address = who_have[0]
+            target_address = who_have  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
             global target_address_get
             target_address_get = 1
 

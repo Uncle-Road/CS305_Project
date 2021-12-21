@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     clients = [B, C, D, E]
     # A register a file and B download it
-    fid = A.register("../test_files/bg.png")
+    fid = A.register("../test_files/alice.txt")
     threads = []
     files = {}
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     for t in threads:
         t.join()
     # check the downloaded files
-    with open("../test_files/bg.png", 'rb') as bg:
+    with open("../test_files/alice.txt", 'rb') as bg:
         bs = bg.read()
         # print("bs: ", bs)'
         print("read files")
@@ -63,20 +63,21 @@ if __name__ == '__main__':
     clients = [F, G]
     for i, client in enumerate(clients):
         threads.append(Thread(target=download, args=(client, i)))
+        # download(client, i)
     for t in threads:
         t.start()
 
     # A exits
-    time.sleep(20)
-    A.cancel(fid)
-
-    # B exits
-    time.sleep(10)
-    B.close()
-
-    # D exits
-    time.sleep(30)
-    D.close()
+    # time.sleep(20)
+    # A.cancel(fid)
+    #
+    # # B exits
+    # time.sleep(10)
+    # B.close()
+    #
+    # # D exits
+    # time.sleep(30)
+    # D.close()
     for t in threads:
         t.join()
     for i in files:

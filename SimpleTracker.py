@@ -51,6 +51,8 @@ class SimpleTracker:
                 if fid not in self.files:
                     self.files[fid] = []
                 self.files[fid].append(client)
+                self.file_length[fid] = length
+                print(self.file_length)
                 print("Tracker registered: " + fid + " of " + client)
                 self.response("Success", frm)
 
@@ -61,7 +63,7 @@ class SimpleTracker:
                 for c in self.files[fid]:
                     result.append(c)
                 print("tracker responds list: " + "[%s]" % (", ".join(result)))
-                self.response("LIST: " + "[%s]" % (", ".join(result)), frm)
+                self.response("LIST" + ":" + self.file_length[fid] + ":" + "[%s]" % (", ".join(result)), frm)
 
             elif msg.startswith("CANCEL:"):
                 # Client can use this file to cancel the share of a file

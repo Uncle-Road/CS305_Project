@@ -3,7 +3,7 @@ from threading import Thread
 
 
 class Server:
-    def __init__(self, upload_rate, download_rate, packet_size=1024, port=10087):
+    def __init__(self, upload_rate, download_rate, packet_size=20000, port=10087):
         self.proxy = Proxy(upload_rate, download_rate, port)
         print("Server bind to", self.proxy.port)
         self.packet_size = packet_size

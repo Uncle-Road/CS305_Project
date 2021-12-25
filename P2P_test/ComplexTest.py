@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     clients = [B, C, D, E]
     # A register a file and B download it
-    fid = A.register("../test_files/bg.png")
+    fid = A.register("../test_files/alice.txt")
     threads = []
     files = {}
 
@@ -23,20 +23,24 @@ if __name__ == '__main__':
     # function for download and save
     def download(node, index):
         files[index] = node.download(fid)
-        # print(node.name, "foe:",files[index])
-
+        # print(node.name,"fooe,",files[index])
+        print(node.name,"fooe",index)
 
     time_start = time.time_ns()
     for i, client in enumerate(clients):
         threads.append(Thread(target=download, args=(client, i)))
+        time.sleep(10)
+        # download(client,i)#没有多线程
     # start download in parallel
     for t in threads:
+        time.sleep(10)
         t.start()
     # wait for finish
     for t in threads:
+        time.sleep(10)
         t.join()
     # check the downloaded files
-    with open("../test_files/bg.png", 'rb') as bg:
+    with open("../test_files/alice.txt", "rb") as bg:
         bs = bg.read()
         # print("bs: ", bs)'
         print("read files")
@@ -49,10 +53,14 @@ if __name__ == '__main__':
             if files[i] == bs:
                 print(i, "success")
             if files[i] != bs:
-                # raise Exception("Downloaded file is different with the original one")
-                print(i, "fail")
-                # print(files[i])
-                pass
+                print("Nope!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                # print("files[",i,"]",files[i])
+                # print("bs",bs)
+                print("files[", i, "]",files[i])
+                print("bs")
+                raise Exception("Downloaded file is different with the original one")
+            else:
+                print(i,"finish!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
     print("finish!!!!!!!")
     # B, C, D, E has completed the download of file

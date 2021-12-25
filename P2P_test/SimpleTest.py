@@ -18,11 +18,11 @@ if __name__ == '__main__':
     # print("data1 =", data1)
     # print("data2 =", data2)
     if data1 == data2:
-        print(data1)
         print("Success!")
+        print(data1.decode())
     else:
         raise RuntimeError
     # print(data1)
 
     B.close()
-    # C.close()
+    C.close()

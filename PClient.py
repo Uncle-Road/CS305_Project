@@ -1,30 +1,33 @@
+# -*- coding : utf-8-*-
+# coding:unicode_escape
 from Proxy import Proxy
-import hashlib
 import ast
 import threading
 import time
+import re
 
-downloaded_file = "empty"
 already_download = 0
 
 target_address = ()
-target_address_get = 0
+# target_address_get = "0"
 
 
 class PClient:
 
     def __init__(self, tracker_addr=(str, int), proxy=None, port=None, upload_rate=0, download_rate=0,
-                 packet_size=10240, name=None):
+                 packet_size=20000, name=None):
         if proxy:
             self.proxy = proxy
         else:
             self.proxy = Proxy(upload_rate, download_rate, port)  # Do not modify this line!
         self.tracker = tracker_addr
         self.name = name
+        self.target_address_get = 0
         """
         Start your additional code below!
         """
-        self.active = True
+        self.downloaded_file = b"empty"
+        self.active = False
         self.thread = threading.Thread(target=self.alwaysListen, args=[])
         self.thread.start()
         self.packet_size = packet_size
@@ -33,7 +36,7 @@ class PClient:
         """
         Do not modify this function!!!
         You must send all your packet by this function!!!
-        :param data: The data to be send
+        :param data: The data to be sent
         :param dst: The address of the destination
         """
         self.proxy.sendto(data, dst)
@@ -68,9 +71,9 @@ class PClient:
         msg = "REGISTER: " + fid
         msg = msg.encode()  # string发送之前要encode
         self.__send__(msg, ("127.0.0.1", 10086))
-        time.sleep(2)
+        time.sleep(0.3)
 
-        print(self.name, "register finish")
+        # print(self.name, "register finish")
         """
         End of your code
         """
@@ -86,39 +89,35 @@ class PClient:
         """
         Start your code below!
         """
-        print(self.name, "download start")
 
         msg = "QUERY: " + fid
         msg = msg.encode()
         self.__send__(msg, self.tracker)
-        time.sleep(2)
-        # response, addr = self.__recv__()
-        # response = response.decode()  # it is a string. eg: [("abc", 1), ("bcd", 2)]
-        # response = ast.literal_eval(response)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
-        # target_address = response[0]
+        # time.sleep(0.25)
 
-        global target_address_get
-        print("target_address_get =", target_address_get)
-        if target_address_get != 0:
+        while self.target_address_get == 0:
+            msg = "QUERY: " + fid
+            msg = msg.encode()
+            self.__send__(msg, self.tracker)
+            time.sleep(0.25)
+
+        if self.target_address_get == 1:
             request = "REQUEST: " + fid
             request = request.encode()
             self.__send__(request, target_address)
-            print(self.name, "send request")
-            time.sleep(10)
-            target_address_get = 0
+            self.active = True
+            while self.active:
+                time.sleep(0.1)
+            self.target_address_get = 0
+        ## new
 
-        global already_download
-        print("already_download =", str(already_download))
-        # # print("downloaded_file = " + downloaded_file)
-        # if already_download != 0:
-        #     data = downloaded_file
-        #     print("had value")
-        #     already_download = 0
-        data = downloaded_file
+        ## new
 
-        data = data.encode()
+        data = self.downloaded_file
+
+        # data = data.encode()
         print(self.name, "download finish")
-
+        # print()
         self.register(fid)
         """
         End of your code
@@ -127,7 +126,7 @@ class PClient:
 
     def cancel(self, fid):
         """
-        Stop sharing a specific file, others should be unable to get this file from this client any more
+        Stop sharing a specific file, others should be unable to get this file from this client anymore
         :param fid: the unique identification of the file to be canceled register on the Tracker
         :return: You can design as your need
         """
@@ -135,20 +134,21 @@ class PClient:
         msg = "CANCEL: " + fid
         msg = msg.encode()
         self.__send__(msg, self.tracker)
-
+        print(self.name, "cancel")
         """
         End of your code
         """
 
     def close(self):
         """
-        Completely stop the client, this client will be unable to share or download files any more
+        Completely stop the client, this client will be unable to share or download files anymore
         :return: You can design as your need
         """
         msg = "CLOSE"
         msg = msg.encode()
         self.__send__(msg, self.tracker)
-        time.sleep(1)
+        # time.sleep(1)
+        print(self.name, "close")
         """
         End of your code
         """
@@ -158,11 +158,11 @@ class PClient:
     # TODO: listen要适用于所有函数，还要加东西。
     def listen(self):
 
-        print(self.name, "listen start")
+        # print(self.name, "listen start")
 
         msg, frm = self.__recv__()
 
-        print(self.name, "listen over and the message is",msg.decode())
+        # print(self.name, "listen over")
 
         msg = msg.decode()
 
@@ -173,45 +173,53 @@ class PClient:
                 data = f.read()
             packets = [data[i * self.packet_size: (i + 1) * self.packet_size]
                        for i in range(len(data) // self.packet_size + 1)]
-            self.__send__(("GIVE: " + str(len(packets))).encode(), frm)
+            self.__send__(("GIVE: " + fid + "-.-." + str(len(packets))).encode(), frm)
             print(self.name, "send packet length is:", len(packets))
-            time.sleep(1)
+            # time.sleep(0.25)
             for packet in packets:
                 self.__send__(packet, frm)
-
+            self.register(fid)
             # file = open(fid)
             # data = file.read()
             # data = "GIVE: " + data
             # data = data.encode()
             # self.__send__(data, frm)
-            print(self.name, "send file")
-        elif msg.startswith("GIVE:"):
+            # print(self.name, "send file")
+        elif msg.startswith("GIVE:"):  # 给这个PClient的文件
             # file = msg[6:]
             # global downloaded_file  # 改全局变量一定要加global关键字
             # downloaded_file = file
             # global already_download
             # already_download = 1
-            msg = msg[6:]
-            global downloaded_file  # 改全局变量一定要加global关键字
-            downloaded_file = ""
+            special_notion = re.search("-.-.", msg).span()  # 正确
+            fid = msg[6:special_notion[0]]
+            msg = msg[special_notion[1]:]
+            # global downloaded_file  # 改全局变量一定要加global关键字
+            self.downloaded_file = b""
             for idx in range(int(msg)):
-                msg, frm = self.__recv__()
-                downloaded_file += msg.decode()
-                print("%s receive %d" % (self.name, idx))
+                data_fragment, frm = self.__recv__()
+                self.downloaded_file += data_fragment
+                if idx % 100 == 0:
+                    print("%s receive %d" % (self.name, idx))
             global already_download
             already_download = 1
+            self.active = False
+            self.__send__(("Free: " + fid + "-." + "("+str(frm[0])+","+str(frm[1])+")").encode(), ("127.0.0.1", 10086)) #send 需要encode()
         elif msg.startswith("LIST:"):
             lst = msg[6:]
-            who_have = ast.literal_eval(lst)  # it is a list of tuples. eg: [('abc', 1), ('bcd', 2)]
-            print(self.name, "knows who have it:", who_have)
-            global target_address
-            target_address = who_have[0]
-            global target_address_get
-            target_address_get = 1
+            who_have = ast.literal_eval(lst)  # it is a list of tuples. eg:  ('127.0.0.1', 38235)
+            if len(who_have) != 0:
+                print(self.name, "knows who have it:", who_have)
+            global target_address  # 有这个文件的server
+            if len(who_have) != 0:
+                target_address = who_have[0]
+                self.target_address_get = 1
+            # else:
+                # print("No server available for",self.name)
 
     def alwaysListen(self):
         while True:
-            print(self.name, "invoke listen")
+            # print(self.name, "invoke listen")
             self.listen()
 
 

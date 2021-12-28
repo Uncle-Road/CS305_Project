@@ -42,7 +42,7 @@ if __name__ == '__main__':
     for t in threads:
         t.join()
     print(f"Time of P2P model: {(time.time_ns() - time_start) * 1e-9}")
-    with open("../../../../Desktop/CS305_P2P-main/test_files/bg.png", "rb") as bg:
+    with open("../test_files/bg.png", "rb") as bg:
         bs = bg.read()
         for i in files:
             if files[i] != bs:

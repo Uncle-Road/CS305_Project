@@ -73,10 +73,13 @@ class Tracker:
                 self.response("LIST: " + "[%s]" % (", ".join(result)), frm)  # LIST: [A, B, C, D],frm
 
             elif msg.startswith("CANCEL:"):
-                # Client can use this file to cancel the share of a file
+                 # Client can use this file to cancel the share of a file
                 fid = msg[8:]
-                if client in self.files[fid]:
-                    self.files[fid].remove(client)
+                print("cancel")
+                if (client, True) in self.files[fid]:
+                    self.files[fid].remove((client, True))
+                elif (client, False) in self.files[fid]:
+                    self.files[fid].remove((client, False))
                 self.response("Success", frm)
 
             elif msg == "CLOSE":

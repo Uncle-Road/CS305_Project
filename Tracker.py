@@ -2,6 +2,7 @@ import re
 from Proxy import Proxy
 from threading import Thread
 
+
 class Tracker:
     def __init__(self, upload_rate=10000, download_rate=10000, port=10086):
         self.proxy = Proxy(upload_rate, download_rate, port)
@@ -50,6 +51,7 @@ class Tracker:
                     self.files[fid] = []
                 # self.files[fid].append(client)
                 self.files[fid].append((client, True))  # True 代表可以使用没人占着
+                print(self.files)
                 print("Tracker registered: " + fid + " of " + client)
                 self.response("Success", frm)
 
@@ -62,11 +64,11 @@ class Tracker:
                 for c in range(0, len(self.files[fid])):
                     print(self.files[fid][c][1])
                     if self.files[fid][c][1] is True:
-
                         result.append(self.files[fid][c][0])  # ["("127.0.0.1",12)"]
                         # c = (c[0], False)
                         self.files[fid][c] = (self.files[fid][c][0], False)
                         break
+                print(self.files)
                 print("tracker responds list: " + "[%s]" % (", ".join(result)))
                 self.response("LIST: " + "[%s]" % (", ".join(result)), frm)  # LIST: [A, B, C, D],frm
 
@@ -83,23 +85,35 @@ class Tracker:
                 for key, value in self.files.items():
                     new_list = []
                     for i in value:
-                        print("check the difference",i[0],client)
+                        print("check the difference", i[0], client)
                         if i[0] != client:
                             new_list.append(i)
                     self.files[key] = new_list
-                print("After close, now the files becomes",self.files) # now the files becomes {'../test_files/alice.txt': [('("127.0.0.1", 47201)', True), ('("127.0.0.1", 26488)', True)]}
+                print("After close, now the files becomes",
+                      self.files)  # now the files becomes {'../test_files/alice.txt': [('("127.0.0.1", 47201)', True), ('("127.0.0.1", 26488)', True)]}
 
 
-            elif msg == "Free":
+            elif msg.startswith("Free"):
                 msg = msg[6:]
                 special_notion = re.search("-.", msg).span()
                 fid = msg[0:special_notion[0]]
-                change_true = msg[special_notion[1]:]
-                for c in self.files[fid]:
-                    if c[0] is change_true and c[1] is False:
-                        c = (c[0], True)
-                    elif c[0] is change_true and c[1] is True:
+                change_true = msg[special_notion[1]:]  # 要free的IP和PORT
+                print("I am in Free now", fid, change_true)
+                # for c in self.files[fid]:
+                #     if c[0] is change_true and c[1] is False:
+                #         c = (c[0], True)
+                #     elif c[0] is change_true and c[1] is True:
+                #         raise Exception("Something wrong, this value should be false")
+                for c in range(0, len(self.files[fid])):
+                    print("I am in For now not in if", self.files[fid][c][0], change_true,self.files[fid][c][1])
+                    # if self.files[fid][c][0] is change_true and self.files[fid][c][1] is False:
+                    print(self.files[fid][c][0].partition("\"")[2].partition("\"")[0],change_true.partition("(")[2].partition(",")[0],self.files[fid][c][0].partition(" ")[2].partition(")")[0],change_true.partition(",")[2].partition(")")[0],self.files[fid][c][1])
+                    if self.files[fid][c][0].partition("\"")[2].partition("\"")[0] == change_true.partition("(")[2].partition(",")[0] and self.files[fid][c][0].partition(" ")[2].partition(")")[0] == change_true.partition(",")[2].partition(")")[0] and self.files[fid][c][1] is False:
+                        print("I am inside For now", self.files[fid][c], "will change to", (self.files[fid][c][0], True), type(self.files[fid][c]),type((self.files[fid][c][0], True)))
+                        self.files[fid][c] = (self.files[fid][c][0], True) #不能用change_true
+                    elif self.files[fid][c][0] is change_true and self.files[fid][c][1] is True:
                         raise Exception("Something wrong, this value should be false")
+
 
 if __name__ == '__main__':
     tracker = Tracker(port=10086)

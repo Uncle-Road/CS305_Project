@@ -8,8 +8,6 @@ import re
 
 already_download = 0
 
-target_address = ()
-# target_address_get = "0"
 
 
 class PClient:
@@ -23,6 +21,7 @@ class PClient:
         self.tracker = tracker_addr
         self.name = name
         self.target_address_get = 0
+        self.target_address = ()
         """
         Start your additional code below!
         """
@@ -31,6 +30,7 @@ class PClient:
         self.thread = threading.Thread(target=self.alwaysListen, args=[])
         self.thread.start()
         self.packet_size = packet_size
+        self.registered_fid = set()
 
     def __send__(self, data: bytes, dst: (str, int)):
         """
@@ -68,17 +68,21 @@ class PClient:
         # md5.update(file_path)
         # fid = md5.hexdigest()  # fid 变成hash码
         fid = file_path
-        msg = "REGISTER: " + fid
-        msg = msg.encode()  # string发送之前要encode
-        self.__send__(msg, ("127.0.0.1", 10086))
-        time.sleep(0.3)
+        if fid in self.registered_fid:
+            return fid
+        else:
+            self.registered_fid.add(fid)
+            msg = "REGISTER: " + fid
+            msg = msg.encode()  # string发送之前要encode
+            self.__send__(msg, ("127.0.0.1", 10086))
+            time.sleep(0.3)
 
-        # print(self.name, "register finish")
-        """
-        End of your code
-        """
-        return fid
-
+            # print(self.name, "register finish")
+            """
+            End of your code
+            """
+            return fid
+        # return fid
     def download(self, fid) -> bytes:
         """
         Download a file from P2P network using its unique identification
@@ -104,7 +108,7 @@ class PClient:
         if self.target_address_get == 1:
             request = "REQUEST: " + fid
             request = request.encode()
-            self.__send__(request, target_address)
+            self.__send__(request, self.target_address)
             self.active = True
             while self.active:
                 time.sleep(0.1)
@@ -130,7 +134,7 @@ class PClient:
         :param fid: the unique identification of the file to be canceled register on the Tracker
         :return: You can design as your need
         """
-
+        self.registered_fid.remove(fid)
         msg = "CANCEL: " + fid
         msg = msg.encode()
         self.__send__(msg, self.tracker)
@@ -144,6 +148,7 @@ class PClient:
         Completely stop the client, this client will be unable to share or download files anymore
         :return: You can design as your need
         """
+        self.registered_fid.clear()
         msg = "CLOSE"
         msg = msg.encode()
         self.__send__(msg, self.tracker)
@@ -205,14 +210,14 @@ class PClient:
             already_download = 1
             self.active = False
             self.__send__(("Free: " + fid + "-." + "("+str(frm[0])+","+str(frm[1])+")").encode(), ("127.0.0.1", 10086)) #send 需要encode()
+            print("already send Free",fid,frm)
         elif msg.startswith("LIST:"):
             lst = msg[6:]
             who_have = ast.literal_eval(lst)  # it is a list of tuples. eg:  ('127.0.0.1', 38235)
             if len(who_have) != 0:
                 print(self.name, "knows who have it:", who_have)
-            global target_address  # 有这个文件的server
             if len(who_have) != 0:
-                target_address = who_have[0]
+                self.target_address = who_have[0]
                 self.target_address_get = 1
             # else:
                 # print("No server available for",self.name)

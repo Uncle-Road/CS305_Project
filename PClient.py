@@ -6,9 +6,6 @@ import threading
 import time
 import re
 
-already_download = 0
-
-
 
 class PClient:
 
@@ -27,10 +24,14 @@ class PClient:
         """
         self.downloaded_file = b"empty"
         self.active = False
-        self.thread = threading.Thread(target=self.alwaysListen, args=[])
-        self.thread.start()
         self.packet_size = packet_size
         self.registered_fid = set()
+        self.fid_length = {} #存有的fid的length给tracker发
+        self.already_download = 0
+        self.special_use_close = ""
+        self.listening = True
+        self.thread = threading.Thread(target=self.alwaysListen, args=[])
+        self.thread.start()
 
     def __send__(self, data: bytes, dst: (str, int)):
         """
@@ -63,11 +64,18 @@ class PClient:
         Start your code below!
         """
         print(self.name, "register start")
-
-        # md5 = hashlib.md5()
-        # md5.update(file_path)
-        # fid = md5.hexdigest()  # fid 变成hash码
         fid = file_path
+        already_in_self_fid_length = False  # false就是没有这个文件的length，要存
+        for key,value in self.fid_length.items():
+            if key == fid:
+                already_in_self_fid_length = True
+                break
+        if not already_in_self_fid_length:
+            with open(fid, 'rb') as f:  # f = open(../tes,'rb')
+                data = f.read()
+            packets = [data[i * self.packet_size: (i + 1) * self.packet_size]
+                       for i in range(len(data) // self.packet_size + 1)]
+            self.fid_length[fid] = len(packets)
         if fid in self.registered_fid:
             return fid
         else:
@@ -76,13 +84,12 @@ class PClient:
             msg = msg.encode()  # string发送之前要encode
             self.__send__(msg, ("127.0.0.1", 10086))
             time.sleep(0.3)
-
             # print(self.name, "register finish")
             """
             End of your code
             """
             return fid
-        # return fid
+
     def download(self, fid) -> bytes:
         """
         Download a file from P2P network using its unique identification
@@ -113,9 +120,6 @@ class PClient:
             while self.active:
                 time.sleep(0.1)
             self.target_address_get = 0
-        ## new
-
-        ## new
 
         data = self.downloaded_file
 
@@ -148,24 +152,34 @@ class PClient:
         Completely stop the client, this client will be unable to share or download files anymore
         :return: You can design as your need
         """
+        # print(self.name, "ready to close")
         self.registered_fid.clear()
         msg = "CLOSE"
         msg = msg.encode()
+
         self.__send__(msg, self.tracker)
-        # time.sleep(1)
+
+        # print(self.name, self.proxy.send_queue.qsize())
+        while not self.proxy.send_queue.empty():
+            time.sleep(0.5)
+            # print(self.name, self.proxy.send_queue.qsize())
+
         print(self.name, "close")
         """
         End of your code
         """
-
+        self.listening = False
+        # print(self.name, "listening is", self.listening)
         self.proxy.close()
 
-    # TODO: listen要适用于所有函数，还要加东西。
     def listen(self):
 
         # print(self.name, "listen start")
-
-        msg, frm = self.__recv__()
+        try:
+            msg, frm = self.__recv__(10)
+        except Exception:
+            return
+        self.special_use_close = frm  # special use only use for instance close that shut down uncompleted transfer
 
         # print(self.name, "listen over")
 
@@ -181,36 +195,34 @@ class PClient:
             self.__send__(("GIVE: " + fid + "-.-." + str(len(packets))).encode(), frm)
             print(self.name, "send packet length is:", len(packets))
             # time.sleep(0.25)
+
+            self.__transmitting = True
             for packet in packets:
                 self.__send__(packet, frm)
-            self.register(fid)
-            # file = open(fid)
-            # data = file.read()
-            # data = "GIVE: " + data
-            # data = data.encode()
-            # self.__send__(data, frm)
-            # print(self.name, "send file")
+            # print("3", self.__transmitting)
+            self.__transmitting = False
+
         elif msg.startswith("GIVE:"):  # 给这个PClient的文件
-            # file = msg[6:]
-            # global downloaded_file  # 改全局变量一定要加global关键字
-            # downloaded_file = file
-            # global already_download
-            # already_download = 1
             special_notion = re.search("-.-.", msg).span()  # 正确
             fid = msg[6:special_notion[0]]
-            msg = msg[special_notion[1]:]
+            msg = msg[special_notion[1]:]#文件总长度
             # global downloaded_file  # 改全局变量一定要加global关键字
             self.downloaded_file = b""
             for idx in range(int(msg)):
+                start =time.time()
+                # if(time.time()-start>1)
                 data_fragment, frm = self.__recv__()
                 self.downloaded_file += data_fragment
                 if idx % 100 == 0:
                     print("%s receive %d" % (self.name, idx))
-            global already_download
-            already_download = 1
+
+            msg = "OK"
+            msg = msg.encode()
+            self.__send__(msg, frm)
+            self.already_download = 1
             self.active = False
             self.__send__(("Free: " + fid + "-." + "("+str(frm[0])+","+str(frm[1])+")").encode(), ("127.0.0.1", 10086)) #send 需要encode()
-            print("already send Free",fid,frm)
+            print("already send Free", fid, frm)
         elif msg.startswith("LIST:"):
             lst = msg[6:]
             who_have = ast.literal_eval(lst)  # it is a list of tuples. eg:  ('127.0.0.1', 38235)
@@ -223,9 +235,10 @@ class PClient:
                 # print("No server available for",self.name)
 
     def alwaysListen(self):
-        while True:
+        while self.listening:
             # print(self.name, "invoke listen")
             self.listen()
+        # print(self.name, "close listening")
 
 
 if __name__ == '__main__':
